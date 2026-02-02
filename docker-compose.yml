@@ -1,0 +1,66 @@
+version: "1.1"
+name: "task-app"
+services:
+  web-1:
+    image: khaledyousry/tasks-frontend:latest
+    container_name: web1
+    networks:
+      - task-app
+
+  web-2:
+    image: khaledyousry/tasks-frontend:latest
+    container_name: web2
+    networks:
+      - task-app
+
+  db:
+    image: postgres:18.1-alpine3.23
+    container_name: db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=supersecret123
+      - POSTGRES_DB=todotraverse
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+      - ./server/database.sql:/docker-entrypoint-initdb.d/1-init.sql
+    networks:
+      - task-app
+
+  server:
+    image: khaledyousry/tasks-backend:latest
+    container_name: server
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./app.env
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - task-app
+
+  proxy:
+    image: nginx:latest
+    container_name: proxy
+    depends_on:
+      - server
+      - web-1
+      - web-2
+    ports:
+      - "8080:80"
+    networks:
+      - task-app
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+networks:
+  task-app:
+    driver: bridge
+
+volumes:
+  postgres-db:
