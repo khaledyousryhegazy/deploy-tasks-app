@@ -49,7 +49,7 @@ services:
       - web-1
       - web-2
     ports:
-      - "8080:80"
+      - "80:80"
     networks:
       - task-app
     volumes:
